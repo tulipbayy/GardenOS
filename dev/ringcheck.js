@@ -17,7 +17,7 @@ const proc = spawn("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     if(m.id&&pend[m.id]){pend[m.id](m.result);delete pend[m.id];}});
   await send("Page.enable");await send("Runtime.enable");await new Promise(r=>setTimeout(r,900));
   // seed a bloomed shroom cluster + a sprout config, then reload so the world boots with them
-  await send("Runtime.evaluate",{expression:`(function(){ var old=Date.now()-90000, w=Date.now();
+  await send("Runtime.evaluate",{expression:`(function(){ var old=Date.now()-200000, w=Date.now();
     localStorage.setItem('gardenos_sprout_v1', JSON.stringify({shape:'round',crown:'sprout',color:'#bfe9cf',cheek:'#ff9ecf',name:'Test'}));
     localStorage.setItem('sprite_grove_tour','1');
     localStorage.setItem('bayanos_garden_v2', JSON.stringify([

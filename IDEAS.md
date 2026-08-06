@@ -79,6 +79,30 @@ A healthier ecosystem = a happier Sproutling + more to discover.
 **First thing to build:** the "meet your Sproutling" creator (the game's opening; also builds the
 sprite-composition — base + motif + palette — that everything else reuses).
 
+## SHIPPED (2026-08-06 build) ✅
+- Sproutling creator (shape/crown/color/name), sprite composition, saved to localStorage
+- Care stats (hunger/happy/energy) with real-elapsed-time decay; energy refills overnight
+- Care apps: 🍎 Kitchen (harvest blooms → pantry → feed, favourites), 🎈 Playground
+  (bubble-pop mini-game), 💤 Nap Nook (timed energy fill)
+- Economy: 🌻 sunseeds (2/bloom on harvest) + Seed Shop — crowns (star/bow/royal) and
+  garden decor (stone/birdbath/gnome/lantern); decor is drag-to-reposition, persisted;
+  lantern glows at night. Blooms take ~3 min (rebalanced from 20s)
+- Full visual redesign: layered pixel-art scene (sky/hills/village/foreground garden),
+  golden-hour + midday + night palettes
+- Time-of-day system: AUTO follows the real clock (midday/golden/night); button cycles
+  auto → midday → golden → night; world (fairies/bugs/lantern/pet) resyncs on auto flips
+- Night consistency: pet + desktop host + Nap Nook all sleep at night; messages use the
+  pet's chosen name
+- Pure-game framing (portfolio windows removed; About = about-the-game); guestbook removed
+- README.md + screenshot for the repo
+
+## NEXT UP (not built)
+- Phase 2 ecosystem: 🐝 pollination → seeds, 📖 flower-dex + cross-breeding
+- Phase 3: 🌦️ weather events & seasons
+- Phase 4: 🎯 gentle goals/milestones, Sproutling growth/evolution stages, journal
+- Ground the Sproutling + planted flowers visually into the foreground garden bed
+- More shop stock (body colors, wind chimes, pond); scene polish (sun glow, cloud shapes)
+
 **Tech notes:** runs fully on GitHub Pages (all client-side JS); saves via localStorage (per-device,
 which is fine for a personal pet). The existing code already has the pixel `draw()` sprite renderer,
 a pet with feed/happy that sleeps at night, a garden that grows/wilts/waters & saves, fairies, and

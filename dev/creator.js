@@ -39,6 +39,13 @@ const proc = spawn("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   var st=await send("Runtime.evaluate",{expression:`(function(){ document.getElementById('feedBtn').click(); document.getElementById('playBtn').click(); document.getElementById('restBtn').click();
     var p=JSON.parse(localStorage.getItem('gardenos_pet_v1')); return 'hunger='+Math.round(p.hunger)+' happy='+Math.round(p.happy)+' energy='+Math.round(p.energy); })()`,returnByValue:true});
   console.log("PET after care:", st.result.value);
+  // walk the guided tour end-to-end (7 steps)
+  var tour=await send("Runtime.evaluate",{expression:`(function(){ try{ var o=document.getElementById('tour-overlay');
+    document.getElementById('guideBtn').click();
+    var steps=[], guard=0; while(o.style.display==='block' && guard<12){ steps.push(document.querySelector('#tour-bubble .tt').textContent);
+      document.querySelector('#tour-bubble .next').click(); guard++; }
+    return JSON.stringify({steps:steps, closed:o.style.display!=='block'}); }catch(e){ return 'ERR:'+e.message; } })()`,returnByValue:true});
+  console.log("TOUR:", tour.result.value);
   // --- Kitchen test: plant, backdate to bloom, reload, harvest, feed ---
   await send("Runtime.evaluate",{expression:`(function(){ document.getElementById('dntoggle').click(); /* auto -> midday */
     document.querySelector('[data-open="buddy"]').click(); var pb=document.getElementById('plantBtn'); for(var i=0;i<5;i++) pb.click();
@@ -53,14 +60,23 @@ const proc = spawn("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   await send("Runtime.evaluate",{expression:`document.querySelector('[data-open="shop"]').click();`});
   await new Promise(r=>setTimeout(r,350));
   var shop=await send("Runtime.evaluate",{expression:`(function(){ var w=JSON.parse(localStorage.getItem('gardenos_wallet_v1')||'{}');
-    var before=w.coins; var items=document.querySelectorAll('#shopItems button'); var msg1='', msg2='';
+    var before=w.coins; var items=document.querySelectorAll('.shoprow button'); var msg1='', msg2='';
     if(items.length){ items[0].click(); msg1=document.getElementById('shopMsg').textContent; }   // star (15) — expect refusal w/ 10
-    items=document.querySelectorAll('#shopItems button');
-    if(items.length>3){ items[3].click(); msg2=document.getElementById('shopMsg').textContent; } // mossy stone (10) — expect placed
+    items=document.querySelectorAll('.shoprow button');
+    if(items.length>4){ items[4].click(); msg2=document.getElementById('shopMsg').textContent; } // mossy stone (10) — expect placed
     var w2=JSON.parse(localStorage.getItem('gardenos_wallet_v1')||'{}');
-    var decorOnDesk=document.querySelectorAll('#desktop-garden canvas').length;
-    return JSON.stringify({coinsAfterHarvest:before, items:items.length, starMsg:msg1, stoneMsg:msg2, coinsNow:w2.coins, decor:w2.decor, gardenCanvases:decorOnDesk}); })()`,returnByValue:true});
+    var decorOnDesk=document.querySelectorAll('#desktop-garden canvas.decor').length;
+    return JSON.stringify({coinsAfterHarvest:before, crownRow:document.querySelectorAll('#shopCrowns button').length, decorRow:document.querySelectorAll('#shopDecor button').length, starMsg:msg1, stoneMsg:msg2, coinsNow:w2.coins, decor:w2.decor, gardenDecor:decorOnDesk}); })()`,returnByValue:true});
   console.log("SHOP:", shop.result.value);
+  // drag the placed decor to a new spot and confirm it persists
+  var drag=await send("Runtime.evaluate",{expression:`(function(){ var dc=document.querySelector('#desktop-garden canvas.decor'); if(!dc) return 'NO DECOR';
+    var r=dc.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+    dc.dispatchEvent(new PointerEvent('pointerdown',{clientX:cx,clientY:cy,bubbles:true,pointerId:1}));
+    dc.dispatchEvent(new PointerEvent('pointermove',{clientX:window.innerWidth*0.25,clientY:window.innerHeight-80,bubbles:true,pointerId:1}));
+    dc.dispatchEvent(new PointerEvent('pointerup',{clientX:window.innerWidth*0.25,clientY:window.innerHeight-80,bubbles:true,pointerId:1}));
+    var w3=JSON.parse(localStorage.getItem('gardenos_wallet_v1')||'{}');
+    return JSON.stringify({movedTo:{x:Math.round(w3.decor[0].x), y:Math.round(w3.decor[0].y)}}); })()`,returnByValue:true});
+  console.log("DECOR-DRAG:", drag.result.value);
   var ss=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"shop.png"),Buffer.from(ss.data,"base64"));
   await new Promise(r=>setTimeout(r,300));
   var sk=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"kitchen.png"),Buffer.from(sk.data,"base64"));

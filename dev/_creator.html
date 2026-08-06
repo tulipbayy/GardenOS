@@ -115,6 +115,10 @@
   #desktop-garden canvas.glowfx { filter:drop-shadow(0 0 5px #d9b0ff) drop-shadow(0 3px 0 #0000001f); }
   #desktop-garden canvas.watered { animation:watered .6s ease; }
   #desktop-garden canvas.lampglow { filter:drop-shadow(0 0 7px #ffd27a) drop-shadow(0 3px 0 #0000001f); }
+  #desktop-garden canvas.decor { pointer-events:auto; cursor:grab; touch-action:none; }
+  #desktop-garden canvas.decor.dragging { cursor:grabbing; filter:brightness(1.1) drop-shadow(0 6px 8px #0003); }
+  .shoplbl { font-size:11px; font-weight:bold; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:10px 0 5px; text-align:left; }
+  .shoprow { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
   @keyframes watered { 0%{ transform:translateY(-3px);} 50%{ transform:translateY(0) scale(1.1);} 100%{ transform:translateY(0);} }
 
   /* ---------- Fairy motes ---------- */
@@ -458,8 +462,11 @@
   <section class="win" id="w-shop" style="top:105px; left:300px;">
     <div class="head"><span class="ttl">🛒 seed shop</span><button class="x" aria-label="Close">×</button></div>
     <div class="body" style="width:300px;">
-      <div class="mood" id="shopMsg">spend your sunseeds on cute looks! 🌻</div>
-      <div id="shopItems" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
+      <div class="mood" id="shopMsg">spend your sunseeds on cute looks &amp; garden decor! 🌻</div>
+      <div class="shoplbl">✨ crowns for your Sproutling</div>
+      <div id="shopCrowns" class="shoprow"></div>
+      <div class="shoplbl">🌷 garden decor</div>
+      <div id="shopDecor" class="shoprow"></div>
       <div style="font-size:11px;color:var(--muted);margin-top:8px;">earn 🌻 sunseeds by harvesting blooms in the kitchen</div>
     </div>
   </section>
@@ -951,7 +958,9 @@
     for(var i=0;i<TYPES.length;i++){ if(TYPES[i].id===p.type) return SPR[TYPES[i].bloom]; } return SPR.bloomRose; }
   var THIRST=45;
   function thirstyP(p){ return stageOf(p.t)>0 && (Date.now()-p.w)/1000 > THIRST; }
+  var decorDrag=null;
   function renderGarden(popLast, wateredNow){
+    if(decorDrag) return;   // don't rebuild the garden mid-drag
     dgEl.innerHTML='';
     plants.forEach(function(p,i){ var c=document.createElement('canvas');
       var sc=(p.y||0)>105?3:4;
@@ -964,7 +973,16 @@
     if(typeof WALLET!=='undefined' && WALLET && WALLET.decor){ WALLET.decor.forEach(function(d2){
       var dc=document.createElement('canvas'); draw(dc, DECOR_SPR[d2.k]||DECOR_SPR.stone, (d2.y||0)>50?3:4);
       dc.style.left=d2.x+'%'; dc.style.bottom=(d2.y||0)+'px';
+      dc.classList.add('decor'); dc.title='drag me to a new spot';
       if(d2.k==='lantern' && isNight()) dc.classList.add('lampglow');
+      dc.addEventListener('pointerdown', function(e){ e.preventDefault(); decorDrag=d2; dc.classList.add('dragging');
+        try{ dc.setPointerCapture(e.pointerId); }catch(_){}} );
+      dc.addEventListener('pointermove', function(e){ if(decorDrag!==d2) return;
+        d2.x=Math.max(1,Math.min(93, e.clientX/window.innerWidth*100));
+        d2.y=Math.max(0,Math.min(110, window.innerHeight-44-e.clientY));
+        dc.style.left=d2.x+'%'; dc.style.bottom=d2.y+'px'; });
+      dc.addEventListener('pointerup', function(e){ if(decorDrag!==d2) return; decorDrag=null; dc.classList.remove('dragging');
+        try{ dc.releasePointerCapture(e.pointerId); }catch(_){} if(typeof saveWallet==='function') saveWallet(); renderGarden(false); });
       dgEl.appendChild(dc); }); }
     var th=plants.filter(thirstyP).length;
     gcount.textContent = plants.length
@@ -1055,13 +1073,14 @@
              {key:'bath',   name:'birdbath',     price:20, type:'decor'},
              {key:'gnome',  name:'garden gnome', price:35, type:'decor'},
              {key:'lantern',name:'firefly lantern', price:45, type:'decor'} ];
-  var shopItems=document.getElementById('shopItems'), shopMsg=document.getElementById('shopMsg');
+  var shopCrowns=document.getElementById('shopCrowns'), shopDecor=document.getElementById('shopDecor'), shopMsg=document.getElementById('shopMsg');
   function refreshSproutEverywhere(){ applySprout(SPROUT); saveSprout(SPROUT);
     document.querySelectorAll('canvas[data-icon]').forEach(function(cv2){ if(cv2.getAttribute('data-icon')==='buddy') draw(cv2, SPR.buddyOpen, +(cv2.getAttribute('data-scale')||3)); });
     try{ if(hostCv) draw(hostCv, SPR.buddyOpen, 3); }catch(e){}
     try{ refreshBuddy(); }catch(e){} try{ drawNap(); }catch(e){} }
-  function renderShop(){ if(!shopItems) return; shopItems.innerHTML='';
+  function renderShop(){ if(!shopCrowns) return; shopCrowns.innerHTML=''; shopDecor.innerHTML='';
     SHOP.forEach(function(it){ var owned=WALLET.owned.indexOf(it.key)>=0, worn=it.type==='crown'&&SPROUT&&SPROUT.crown===it.key;
+      var host = it.type==='decor' ? shopDecor : shopCrowns;
       var b=document.createElement('button'); b.type='button'; b.className='type-opt'+(worn?' sel':'');
       var c=document.createElement('canvas');
       if(it.type==='crown'){ var cfg={}; for(var k in SPROUT) cfg[k]=SPROUT[k]; cfg.crown=it.key; draw(c, composeSprout(cfg,false), 3); }
@@ -1081,16 +1100,16 @@
         } else { shopMsg.textContent = it.type==='decor' ? 'the '+it.name+' is already out in your garden 🌷' : 'wearing the '+it.name+' 💚'; }
         if(it.type==='crown'){ SPROUT.crown=it.key; refreshSproutEverywhere(); }
         renderShop(); });
-      shopItems.appendChild(b); });
+      host.appendChild(b); });
     // original creator crowns stay wearable for free
     var back=document.createElement('button'); back.type='button'; back.className='type-opt';
     var c2=document.createElement('canvas'); var cfg2={}; for(var k2 in SPROUT) cfg2[k2]=SPROUT[k2]; cfg2.crown='sprout';
     draw(c2, composeSprout(cfg2,false), 3); back.appendChild(c2);
     var nm2=document.createElement('span'); nm2.className='tn'; nm2.textContent='classic sprout · free'; back.appendChild(nm2);
     back.addEventListener('click', function(){ SPROUT.crown='sprout'; refreshSproutEverywhere(); renderShop(); shopMsg.textContent='back to the classic look 🌱'; });
-    shopItems.appendChild(back);
+    shopCrowns.appendChild(back);
   }
-  if(shopItems){ new MutationObserver(function(){ if(document.getElementById('w-shop').classList.contains('open')) renderShop(); })
+  if(shopCrowns){ new MutationObserver(function(){ if(document.getElementById('w-shop').classList.contains('open')) renderShop(); })
       .observe(document.getElementById('w-shop'), {attributes:true, attributeFilter:['class']}); }
 
   if(napBtn){ napBtn.addEventListener('click', tuckIn);
@@ -1257,12 +1276,13 @@
       skipB=bubble.querySelector('.skip'), backB=bubble.querySelector('.back'), nextB=bubble.querySelector('.next');
   draw(document.getElementById('tourFairy'), SPR.fairy, 3);
   var STEPS=[
-    {sel:null, t:'Welcome to GardenOS 🌱', x:'A tiny living desktop game — design a pet, care for it, and grow a garden. Here’s a 20-second tour.'},
-    {sel:'#icons', t:'Your desktop', x:'These icons open windows: About and your Sproutling. Drag any window by its title bar to move it.'},
-    {sel:'[data-open="buddy"]', t:'Your Sproutling', x:'Open your Sproutling to feed 🍎, play 🎈 and rest 💤 it — keep its stats up! You can also pick from 8 flowers and plant them on your desktop, where they grow over time.'},
-    {sel:'#dntoggle', t:'Day ↔ night', x:'Flip this to change the time of day. At night the world glows, your Sproutling sleeps, and the fairies come out to play.'},
+    {sel:null, t:'Welcome to GardenOS 🌱', x:'A tiny living desktop game — design a pet, care for it, and grow a garden. Here’s a 30-second tour.'},
+    {sel:'[data-open="buddy"]', t:'Your Sproutling', x:'Your pet lives here — watch its hunger 🍎, happiness 😊 and energy ⚡ bars; they drift over real time, even while you’re away. This window is also where you plant flowers from 8 seed types.'},
+    {sel:'#iconsR', t:'The care apps', x:'Caring happens in little apps: harvest & feed treats in the 🍎 Kitchen (it has a favourite!), pop bubbles together in the 🎈 Playground, and tuck it in at the 💤 Nap Nook.'},
+    {sel:'#wallet', t:'Sunseeds 🌻', x:'Harvesting blooms earns sunseeds. Spend them in the 🛒 Seed Shop on crowns for your Sproutling and garden decor — and drag decor anywhere in your garden.'},
+    {sel:'#dntoggle', t:'Time of day 🕐', x:'The world follows your real clock — sunny midday, golden dusk, starry night. Click here to cycle moods yourself. At night your Sproutling sleeps (and recharges).'},
     {sel:null, t:'Fairies ✨', x:'Pixel fairies drift toward your blooms. Click one for a wish — fairy dust or a free flower! (Psst: plant 3 toadstools for a secret fairy ring.)'},
-    {sel:null, t:'That’s GardenOS! 🌱', x:'Your Sproutling and garden are saved for next time. Replay this guide anytime with the ❓ button. Enjoy!'}
+    {sel:null, t:'That’s GardenOS! 🌱', x:'Your Sproutling, garden, wallet and decor are all saved for next time. Replay this guide anytime with the ❓ button. Enjoy!'}
   ];
   var curStep=0;
   function placeBubble(r){ bubble.style.display='block'; var bw=bubble.offsetWidth, bh=bubble.offsetHeight, m=14, top, left;

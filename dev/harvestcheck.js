@@ -16,18 +16,20 @@ const proc = spawn("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     if(m.method==="Runtime.exceptionThrown")errs.push(m.params.exceptionDetails.exception&&m.params.exceptionDetails.exception.description||m.params.exceptionDetails.text);
     if(m.id&&pend[m.id]){pend[m.id](m.result);delete pend[m.id];}});
   await send("Page.enable");await send("Runtime.enable");await new Promise(r=>setTimeout(r,900));
-  // hatch through creator, force midday, plant 2, open kitchen right away
-  await send("Runtime.evaluate",{expression:`(function(){ var h=document.getElementById('cHatch'); if(h) h.click();
-    var tb=document.querySelector('#tour-overlay .skip'); if(tb) tb.click();
-    document.getElementById('dntoggle').click(); /* auto -> midday */
-    document.querySelector('[data-open="buddy"]').click(); var pb=document.getElementById('plantBtn'); pb.click(); pb.click();
-    document.querySelector('[data-open="kitchen"]').click(); })()`});
-  await new Promise(r=>setTimeout(r,600));
+  // seed 2 plants that are 170s old (bloom at 180s), reload, open kitchen while still unripe
+  await send("Runtime.evaluate",{expression:`(function(){ var t=Date.now()-170000, w=Date.now();
+    localStorage.setItem('gardenos_sprout_v1', JSON.stringify({shape:'round',crown:'sprout',color:'#bfe9cf',cheek:'#ff9ecf',name:'Test'}));
+    localStorage.setItem('sprite_grove_tour','1');
+    localStorage.setItem('bayanos_garden_v2', JSON.stringify([
+      {t:t,w:w,type:'rose',x:30,y:20,spread:true},{t:t,w:w,type:'daisy',x:60,y:30,spread:true}])); })()`});
+  await send("Page.reload"); await new Promise(r=>setTimeout(r,1200));
+  await send("Runtime.evaluate",{expression:`document.getElementById('dntoggle').click(); document.querySelector('[data-open="kitchen"]').click();`});
+  await new Promise(r=>setTimeout(r,400));
   const d0=await send("Runtime.evaluate",{expression:`document.getElementById('harvestBtn').disabled`,returnByValue:true});
-  console.log("right after planting, harvest disabled:", d0.result.value, "(expect true — not ripe)");
-  await new Promise(r=>setTimeout(r,24000));  // wait past 20s bloom + 3s refresh tick
+  console.log("kitchen open at 170s age, harvest disabled:", d0.result.value, "(expect true — not ripe)");
+  await new Promise(r=>setTimeout(r,14000));  // plants cross the 180s bloom mark; 3s tick should wake the button
   const d1=await send("Runtime.evaluate",{expression:`JSON.stringify({disabled:document.getElementById('harvestBtn').disabled, label:document.getElementById('harvestBtn').textContent})`,returnByValue:true});
-  console.log("after 24s with kitchen open:", d1.result.value, "(expect enabled + '2 ready')");
+  console.log("after bloom + refresh tick:", d1.result.value, "(expect enabled + '2 ready')");
   console.log("EXCEPTIONS:", errs.length?errs:"none");
   ws.close(); proc.kill();
 })();
