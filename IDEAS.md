@@ -95,11 +95,16 @@ sprite-composition — base + motif + palette — that everything else reuses).
   pet's chosen name
 - Pure-game framing (portfolio windows removed; About = about-the-game); guestbook removed
 - README.md + screenshot for the repo
+- 🌦️ Weather & sky events: rain (~every 4–5 min by chance, 45s) auto-waters the garden with
+  visible streaks + damp tint → followed by a 🌈 rainbow (+5 🌻, 30s); night shooting stars 🌠
+  (occasional +1 🌻). Engine in main script, visuals in the scene canvas via window.__weather.
+- 📱 Mobile pass: viewport meta added (was missing!), windows cap to screen height + scroll,
+  taskbar/icons shrink under 560px; verified at 390×844 with no horizontal overflow.
 
 ## NEXT UP (not built)
+- 🐣 Sproutling growth/evolution stages (care streak → seedling → bloomed → radiant) — PICKED
+- 🎯 Gentle goals/milestones + keepsake journal — PICKED
 - Phase 2 ecosystem: 🐝 pollination → seeds, 📖 flower-dex + cross-breeding
-- Phase 3: 🌦️ weather events & seasons
-- Phase 4: 🎯 gentle goals/milestones, Sproutling growth/evolution stages, journal
 - Ground the Sproutling + planted flowers visually into the foreground garden bed
 - More shop stock (body colors, wind chimes, pond); scene polish (sun glow, cloud shapes)
 
