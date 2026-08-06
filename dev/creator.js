@@ -39,8 +39,55 @@ const proc = spawn("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   var st=await send("Runtime.evaluate",{expression:`(function(){ document.getElementById('feedBtn').click(); document.getElementById('playBtn').click(); document.getElementById('restBtn').click();
     var p=JSON.parse(localStorage.getItem('gardenos_pet_v1')); return 'hunger='+Math.round(p.hunger)+' happy='+Math.round(p.happy)+' energy='+Math.round(p.energy); })()`,returnByValue:true});
   console.log("PET after care:", st.result.value);
+  // --- Kitchen test: plant, backdate to bloom, reload, harvest, feed ---
+  await send("Runtime.evaluate",{expression:`(function(){ document.getElementById('dntoggle').click(); /* auto -> midday */
+    document.querySelector('[data-open="buddy"]').click(); var pb=document.getElementById('plantBtn'); for(var i=0;i<5;i++) pb.click();
+    var g=JSON.parse(localStorage.getItem('bayanos_garden_v2')||'[]'); var old=Date.now()-200000; g.forEach(function(p){ p.t=old; }); localStorage.setItem('bayanos_garden_v2', JSON.stringify(g)); return 'planted '+g.length; })()`,returnByValue:true}).then(r=>console.log("SEED:",r.result.value));
+  await send("Page.reload"); await new Promise(r=>setTimeout(r,1300));
+  var kit=await send("Runtime.evaluate",{expression:`(function(){ document.getElementById('dntoggle').click(); /* auto -> midday */
+    document.querySelector('[data-open="kitchen"]').click(); var h=document.getElementById('harvestBtn'); var ready=h.textContent; h.click();
+    var food=JSON.parse(localStorage.getItem('gardenos_food_v1')||'{}'); var f=document.querySelector('#pantry button'); var fed=!!f; if(f) f.click();
+    return JSON.stringify({harvestBtn:ready, pantryTypes:Object.keys(food).length, fed:fed, msg:document.getElementById('kitMsg').textContent}); })()`,returnByValue:true});
+  console.log("KITCHEN:", kit.result.value);
+  // Shop test: coins from harvest, buy a crown (open, wait for observer, then buy)
+  await send("Runtime.evaluate",{expression:`document.querySelector('[data-open="shop"]').click();`});
+  await new Promise(r=>setTimeout(r,350));
+  var shop=await send("Runtime.evaluate",{expression:`(function(){ var w=JSON.parse(localStorage.getItem('gardenos_wallet_v1')||'{}');
+    var before=w.coins; var items=document.querySelectorAll('#shopItems button'); var msg1='', msg2='';
+    if(items.length){ items[0].click(); msg1=document.getElementById('shopMsg').textContent; }   // star (15) — expect refusal w/ 10
+    items=document.querySelectorAll('#shopItems button');
+    if(items.length>3){ items[3].click(); msg2=document.getElementById('shopMsg').textContent; } // mossy stone (10) — expect placed
+    var w2=JSON.parse(localStorage.getItem('gardenos_wallet_v1')||'{}');
+    var decorOnDesk=document.querySelectorAll('#desktop-garden canvas').length;
+    return JSON.stringify({coinsAfterHarvest:before, items:items.length, starMsg:msg1, stoneMsg:msg2, coinsNow:w2.coins, decor:w2.decor, gardenCanvases:decorOnDesk}); })()`,returnByValue:true});
+  console.log("SHOP:", shop.result.value);
+  var ss=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"shop.png"),Buffer.from(ss.data,"base64"));
   await new Promise(r=>setTimeout(r,300));
+  var sk=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"kitchen.png"),Buffer.from(sk.data,"base64"));
+  // open Playground + start a round
+  await send("Runtime.evaluate",{expression:`var p=document.querySelector('[data-open="play"]'); if(p) p.click(); var s=document.getElementById('playStart'); if(s) s.click();`});
+  await new Promise(r=>setTimeout(r,1400));
+  await send("Runtime.evaluate",{expression:`'play open='+document.getElementById('w-play').classList.contains('open')+', bubbles drawn'`,returnByValue:true}).then(r=>console.log("PLAY:",r.result.value));
+  var sp=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"playground.png"),Buffer.from(sp.data,"base64"));
+  // Nap Nook: tuck in, watch energy rise
+  var e0=(await send("Runtime.evaluate",{expression:`JSON.parse(localStorage.getItem('gardenos_pet_v1')||'{}').energy`,returnByValue:true})).result.value;
+  await send("Runtime.evaluate",{expression:`var n=document.querySelector('[data-open="nap"]'); if(n) n.click(); var b=document.getElementById('napBtn'); if(b) b.click();`});
+  await new Promise(r=>setTimeout(r,2200));
+  var e1=(await send("Runtime.evaluate",{expression:`JSON.parse(localStorage.getItem('gardenos_pet_v1')||'{}').energy`,returnByValue:true})).result.value;
+  console.log("NAP: energy", e0, "→", e1, "| msg:", (await send("Runtime.evaluate",{expression:`document.getElementById('napMsg').textContent`,returnByValue:true})).result.value);
+  var sn=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"nap.png"),Buffer.from(sn.data,"base64"));
+  await send("Runtime.evaluate",{expression:`document.querySelectorAll('.win').forEach(function(w){ if(w.classList.contains('open')){ var x=w.querySelector('.x'); if(x) x.click(); } });`});
+  await new Promise(r=>setTimeout(r,500));
   var s2=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"desktop.png"),Buffer.from(s2.data,"base64"));
+  console.log("default scene:", (await send("Runtime.evaluate",{expression:`document.documentElement.getAttribute('data-scene')`,returnByValue:true})).result.value);
+  await send("Runtime.evaluate",{expression:`var b=document.getElementById('dntoggle'); b.click(); b.click(); b.click();`});
+  await new Promise(r=>setTimeout(r,500));
+  console.log("after 3 clicks:", (await send("Runtime.evaluate",{expression:`document.documentElement.getAttribute('data-scene')`,returnByValue:true})).result.value);
+  var s3=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"desktop_night.png"),Buffer.from(s3.data,"base64"));
+  // night consistency: nap nook must agree the pet is asleep, messages use the pet's name
+  var nc=await send("Runtime.evaluate",{expression:`(function(){ document.querySelector('[data-open="buddy"]').click(); document.querySelector('[data-open="nap"]').click();
+    return JSON.stringify({ mood:document.getElementById('mood').textContent, napDisabled:document.getElementById('napBtn').disabled, napMsg:document.getElementById('napMsg').textContent }); })()`,returnByValue:true});
+  console.log("NIGHT-CONSISTENCY:", nc.result.value);
   console.log("EXCEPTIONS:", errs.length?errs:"none");
   ws.close(); proc.kill();
 })();

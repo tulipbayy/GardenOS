@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset='utf-8'></head><body><title>Bayansulu's GardenOS 🌱</title>
+<title>Bayansulu's GardenOS 🌱</title>
 <style>
   :root {
     /* DAY (default) */
@@ -114,7 +114,6 @@
   #desktop-garden canvas.thirsty { filter:saturate(.3) drop-shadow(0 3px 0 #0000001f); transform:rotate(-5deg); }
   #desktop-garden canvas.glowfx { filter:drop-shadow(0 0 5px #d9b0ff) drop-shadow(0 3px 0 #0000001f); }
   #desktop-garden canvas.watered { animation:watered .6s ease; }
-  #desktop-garden canvas.lampglow { filter:drop-shadow(0 0 7px #ffd27a) drop-shadow(0 3px 0 #0000001f); }
   @keyframes watered { 0%{ transform:translateY(-3px);} 50%{ transform:translateY(0) scale(1.1);} 100%{ transform:translateY(0);} }
 
   /* ---------- Fairy motes ---------- */
@@ -689,13 +688,6 @@
     royal:  ["................","......f.f.f.....","......fffff.....","......fffff.....","................"],
     none:   ["................","................","................","................","................"]
   };
-  /* garden decor sprites (shop-bought, placed in the garden) */
-  var DECOR_SPR={
-    stone:  ["............","............","...g..g.....","..kkkkkk....",".kkkkkkkk...",".kkkkkkkk...","..kkkkkk....","............"],
-    bath:   ["..wwwwww....",".wbbbbbbw...","..wwwwww....","....ww......","....ww......","...wwww.....","..wwwwww...."],
-    gnome:  ["....rr......","...rrrr.....","..rrrrrr....","...EEEE.....","..wEEEEw....","..wwwwww....","..bbbbbb....","..bbbbbb....","...d..d....."],
-    lantern:["....ooo.....","...oyyyo....","...oyyyo....","...oyyyo....","....ooo.....",".....D......",".....D......",".....D......","....DDD....."]
-  };
   var EARS={
     round:["................","................","................","................"],
     bunny:["....SS....SS....","....SP....PS....","....SS....SS....","....SS....SS...."],
@@ -746,10 +738,6 @@
     dnBtn.textContent = mode==='dark' ? '☀️' : '🌙';
     document.getElementById('sun').style.opacity='1';
     if(buddyCv) refreshBuddy();
-    if(hostCv) draw(hostCv, mode==='dark'?SPR.buddyShut:SPR.buddyOpen, 3);   // desktop pet sleeps too
-    try{ drawNap(); refreshNapUI(); }catch(e){}
-    try{ syncFairies(); syncBugs(); }catch(e){}   // world resyncs on AUTO flips, not just button clicks
-    try{ renderGarden(false); }catch(e){}         // lantern glow etc. reacts to time of day
   }
   /* time-of-day: 'auto' follows the real clock; the button cycles auto → midday → golden → night */
   var SCENE_MODES=['auto','midday','golden','night'], ICONS={auto:'🕐',midday:'☀️',golden:'🌇',night:'🌙'}, sceneIx=0;
@@ -836,8 +824,7 @@
       plantBtn=document.getElementById('plantBtn'), waterBtn=document.getElementById('waterBtn'),
       gcount=document.getElementById('gcount'), dgEl=document.getElementById('desktop-garden');
   var happy=0, blinkT=0;
-  function pn(){ return (SPROUT && SPROUT.name) ? SPROUT.name : 'sprout'; }   // the pet's chosen name
-  function dayMood(){ return [pn()+' is soaking up the sun ☀️',pn()+' feels cozy 🌷',pn()+' is humming a tune 🎵',pn()+' loves visitors! 💚'][(Math.random()*4)|0]; }
+  var dayMoods=['sprout is soaking up the sun ☀️','sprout feels cozy 🌷','sprout is humming a tune 🎵','sprout loves visitors! 💚'];
   /* ---- Sproutling care stats (real-time tamagotchi) ---- */
   var PET_KEY='gardenos_pet_v1';
   function clampS(v){ return v<0?0:v>100?100:v; }
@@ -852,7 +839,7 @@
   function statColor(v){ return v>55?'#7fce8a':v>25?'#f5c451':'#f28a8a'; }
   function updateBars(){ [[bH,PET.hunger],[bA,PET.happy],[bE,PET.energy]].forEach(function(p){ if(p[0]){ p[0].style.width=p[1]+'%'; p[0].style.background=statColor(p[1]); } }); }
   function petNeedMood(){ if(!PET) return null; var lo=Math.min(PET.hunger,PET.happy,PET.energy); if(lo>30) return null;
-    if(PET.hunger===lo) return pn()+' is getting hungry 🍎'; if(PET.energy===lo) return pn()+' is sleepy… 💤'; return pn()+' wants to play 🎈'; }
+    if(PET.hunger===lo) return 'sprout is getting hungry 🍎'; if(PET.energy===lo) return 'sprout is sleepy… 💤'; return 'sprout wants to play 🎈'; }
   function petHop(){ buddyCv.classList.remove('hop'); void buddyCv.offsetWidth; buddyCv.classList.add('hop'); }
   function care(stat, amt, cost, msg){ if(isNight()) return; decayPet();
     PET[stat]=clampS(PET[stat]+amt); if(cost) PET.energy=clampS(PET.energy-cost);
@@ -865,8 +852,8 @@
     zEl.classList.toggle('on', night);
     [feedBtn,playBtn,restBtn,plantBtn,waterBtn].forEach(function(b){ if(b) b.disabled=night; });
     updateBars();
-    if(night){ moodEl.textContent='shhh… '+pn()+' is asleep 🌙 (energy refills overnight)'; }
-    else if(!/snack|played|nap|planted|watered|yum|fun/.test(moodEl.textContent)){ moodEl.textContent=petNeedMood()||dayMood(); }
+    if(night){ moodEl.textContent='shhh… sprout is asleep 🌙'; }
+    else if(!/snack|played|nap|planted|watered/.test(moodEl.textContent)){ moodEl.textContent=petNeedMood()||dayMoods[0]; }
   }
   // idle blink (day only)
   setInterval(function(){ if(isNight()) return; draw(buddyCv,SPR.buddyShut,7);
@@ -899,7 +886,7 @@
       else { b.y+=b.vy*dt; b.w+=dt*2.2; b.x+=Math.sin(b.w)*0.5; if(b.y<-16){ pB.splice(i,1); } } }
     pDraw();
     if(pRun||pB.length){ pRaf=requestAnimationFrame(pLoop); } else { pRaf=null; pLast=0; } }
-  function pStartRound(){ if(typeof isNight==='function' && isNight()){ playMsg.textContent=pn()+' is asleep — come play in the morning 🌙'; return; }
+  function pStartRound(){ if(typeof isNight==='function' && isNight()){ playMsg.textContent='your Sproutling is asleep — come back by day 🌙'; return; }
     pB=[]; pScore=0; pTime=15; pRun=true; pLast=0; pSpawn=0; playScoreEl.textContent='score: 0'; playMsg.textContent='pop! pop! pop! 🫧';
     playStart.textContent='playing…'; playStart.disabled=true; if(!pRaf) pRaf=requestAnimationFrame(pLoop); }
   function pEnd(){ pRun=false; playStart.disabled=false; playStart.textContent='▶ play again';
@@ -946,7 +933,7 @@
     }catch(e){ return []; } }
   function saveGarden(a){ try{ localStorage.setItem(GKEY, JSON.stringify(a)); }catch(e){} }
   var plants=loadGarden();
-  function stageOf(t){ var age=(Date.now()-t)/1000; return age<60?0:age<180?1:2; }   // sprout → stem → bloom (~3 min)
+  function stageOf(t){ var age=(Date.now()-t)/1000; return age<8?0:age<20?1:2; }
   function gridFor(p){ var st=stageOf(p.t); if(st===0) return SPR.plant0; if(st===1) return SPR.plant1;
     for(var i=0;i<TYPES.length;i++){ if(TYPES[i].id===p.type) return SPR[TYPES[i].bloom]; } return SPR.bloomRose; }
   var THIRST=45;
@@ -961,11 +948,6 @@
       if(popLast && i===plants.length-1) c.classList.add('sprout-pop');
       if(wateredNow) c.classList.add('watered');
       dgEl.appendChild(c); });
-    if(typeof WALLET!=='undefined' && WALLET && WALLET.decor){ WALLET.decor.forEach(function(d2){
-      var dc=document.createElement('canvas'); draw(dc, DECOR_SPR[d2.k]||DECOR_SPR.stone, (d2.y||0)>50?3:4);
-      dc.style.left=d2.x+'%'; dc.style.bottom=(d2.y||0)+'px';
-      if(d2.k==='lantern' && isNight()) dc.classList.add('lampglow');
-      dgEl.appendChild(dc); }); }
     var th=plants.filter(thirstyP).length;
     gcount.textContent = plants.length
       ? '🌱 '+plants.length+' growing'+(th?' · '+th+' thirsty 💧':' · all happy 💚')
@@ -1005,13 +987,13 @@
     if(!any) pantry.innerHTML='<span style="font-size:12px;color:var(--muted)">no treats yet — grow flowers in your garden, then harvest them 🌸</span>';
   }
   function harvestGarden(){ var n=0; for(var i=plants.length-1;i>=0;i--){ if(stageOf(plants[i].t)===2){ var id=plants[i].type; FOOD[id]=(FOOD[id]||0)+1; n++; plants.splice(i,1); } }
-    if(n){ saveGarden(plants); saveFood(); renderGarden(false); addCoins(n*2); }
-    kitMsg.textContent = n ? ('harvested '+n+' treat'+(n>1?'s':'')+'! 🌾 +'+(n*2)+' 🌻 sunseeds') : 'nothing ripe yet — let your flowers bloom 🌱';
+    if(n){ saveGarden(plants); saveFood(); renderGarden(false); addCoins(n*3); }
+    kitMsg.textContent = n ? ('harvested '+n+' treat'+(n>1?'s':'')+'! 🌾 +'+(n*3)+' 🌻 sunseeds') : 'nothing ripe yet — let your flowers bloom 🌱';
     renderKitchen(); }
-  function feedFood(id){ if(typeof isNight==='function' && isNight()){ kitMsg.textContent=pn()+' is asleep 🌙 — treats can wait till morning'; return; }
+  function feedFood(id){ if(typeof isNight==='function' && isNight()){ kitMsg.textContent='your Sproutling is asleep 🌙'; return; }
     if(!(FOOD[id]>0)){ renderKitchen(); return; } FOOD[id]--; if(FOOD[id]<=0) delete FOOD[id]; saveFood();
     var ty=typeById(id), fav = SPROUT && SPROUT.fav===id;
-    care('hunger', 26, 0, (fav?'yum!! a favourite — ':'yum! ')+ty.name+' 🍽️'); if(fav) care('happy', 12, 0, pn()+' LOVES '+ty.name+'! 💛');
+    care('hunger', 26, 0, (fav?'yum!! a favourite — ':'yum! ')+ty.name+' 🍽️'); if(fav) care('happy', 12, 0, 'sprout LOVES '+ty.name+'! 💛');
     renderKitchen(); }
   if(harvestBtn){ harvestBtn.addEventListener('click', harvestGarden);
     new MutationObserver(function(){ if(document.getElementById('w-kitchen').classList.contains('open')) renderKitchen(); })
@@ -1022,14 +1004,9 @@
   /* ---- Nap Nook: tuck-in → energy fills over ~10s ---- */
   var napCv=document.getElementById('napCv'), napBtn=document.getElementById('napBtn'), napMsg=document.getElementById('napMsg'),
       napFill=document.getElementById('napFill'), napZ=document.getElementById('napZ'), napping=false;
-  function drawNap(){ if(napCv) draw(napCv, (napping||isNight())?SPR.buddyShut:SPR.buddyOpen, 6); }
-  function refreshNapUI(){ if(!napBtn || napping) return;
-    if(isNight()){ napBtn.disabled=true; napMsg.textContent=pn()+' is already fast asleep for the night 🌙 (energy refills overnight)'; }
-    else { napBtn.disabled=false; napMsg.textContent = PET.energy>=90 ? pn()+' is wide awake — not sleepy! 😊' : 'tuck '+pn()+' in for a cozy nap 💤'; }
-    if(napFill) napFill.style.width='0'; }
+  function drawNap(){ if(napCv) draw(napCv, napping?SPR.buddyShut:SPR.buddyOpen, 6); }
   function tuckIn(){ if(napping) return;
-    if(isNight()){ refreshNapUI(); return; }
-    if(PET.energy>=90){ napMsg.textContent=pn()+' is wide awake — not sleepy! 😊'; return; }
+    if(PET.energy>=90){ napMsg.textContent='your Sproutling is wide awake — not sleepy! 😊'; return; }
     napping=true; napBtn.disabled=true; napZ.style.opacity='1'; napMsg.textContent='shhh… napping 💤'; drawNap();
     var dur=10000, start=performance.now(), e0=PET.energy, target=Math.min(100, PET.energy+45);
     (function step(t){ var p=Math.min(1,(t-start)/dur); PET.energy=e0+(target-e0)*p; updateBars(); if(napFill) napFill.style.width=(p*100)+'%';
@@ -1048,39 +1025,30 @@
   function addCoins(n){ WALLET.coins+=n; saveWallet(); renderWallet();
     if(walletEl){ walletEl.classList.remove('coinpop'); void walletEl.offsetWidth; walletEl.classList.add('coinpop'); } }
   renderWallet();
-  var SHOP=[ {key:'star',   name:'star sprout',  price:15, type:'crown'},
-             {key:'bow',    name:'ribbon bow',   price:25, type:'crown'},
-             {key:'royal',  name:'royal crown',  price:60, type:'crown'},
-             {key:'stone',  name:'mossy stone',  price:10, type:'decor'},
-             {key:'bath',   name:'birdbath',     price:20, type:'decor'},
-             {key:'gnome',  name:'garden gnome', price:35, type:'decor'},
-             {key:'lantern',name:'firefly lantern', price:45, type:'decor'} ];
+  var SHOP=[ {key:'star',  name:'star sprout', price:12},
+             {key:'bow',   name:'ribbon bow',  price:15},
+             {key:'royal', name:'royal crown', price:25} ];
   var shopItems=document.getElementById('shopItems'), shopMsg=document.getElementById('shopMsg');
   function refreshSproutEverywhere(){ applySprout(SPROUT); saveSprout(SPROUT);
     document.querySelectorAll('canvas[data-icon]').forEach(function(cv2){ if(cv2.getAttribute('data-icon')==='buddy') draw(cv2, SPR.buddyOpen, +(cv2.getAttribute('data-scale')||3)); });
     try{ if(hostCv) draw(hostCv, SPR.buddyOpen, 3); }catch(e){}
     try{ refreshBuddy(); }catch(e){} try{ drawNap(); }catch(e){} }
   function renderShop(){ if(!shopItems) return; shopItems.innerHTML='';
-    SHOP.forEach(function(it){ var owned=WALLET.owned.indexOf(it.key)>=0, worn=it.type==='crown'&&SPROUT&&SPROUT.crown===it.key;
+    SHOP.forEach(function(it){ var owned=WALLET.owned.indexOf(it.key)>=0, worn=SPROUT&&SPROUT.crown===it.key;
       var b=document.createElement('button'); b.type='button'; b.className='type-opt'+(worn?' sel':'');
-      var c=document.createElement('canvas');
-      if(it.type==='crown'){ var cfg={}; for(var k in SPROUT) cfg[k]=SPROUT[k]; cfg.crown=it.key; draw(c, composeSprout(cfg,false), 3); }
-      else { draw(c, DECOR_SPR[it.key], 3); }
-      b.appendChild(c);
+      var c=document.createElement('canvas'); var cfg={}; for(var k in SPROUT) cfg[k]=SPROUT[k]; cfg.crown=it.key;
+      draw(c, composeSprout(cfg,false), 3); b.appendChild(c);
       var nm=document.createElement('span'); nm.className='tn';
-      nm.textContent = worn ? it.name+' · wearing' : owned ? (it.type==='decor' ? it.name+' · in your garden' : it.name+' · owned') : it.name+' · '+it.price+' 🌻';
+      nm.textContent = worn ? it.name+' · wearing' : owned ? it.name+' · owned' : it.name+' · '+it.price+' 🌻';
       b.appendChild(nm);
       b.addEventListener('click', function(){
         if(!SPROUT) return;
         if(WALLET.owned.indexOf(it.key)<0){
           if(WALLET.coins<it.price){ shopMsg.textContent='not enough sunseeds — harvest more blooms! 🌻'; return; }
-          WALLET.coins-=it.price; WALLET.owned.push(it.key);
-          if(it.type==='decor'){ WALLET.decor=WALLET.decor||[]; WALLET.decor.push({k:it.key, x:8+Math.random()*84, y:Math.floor(Math.random()*90)});
-            saveWallet(); renderWallet(); renderGarden(false); shopMsg.textContent='the '+it.name+' found a spot in your garden! 🌷'; }
-          else { saveWallet(); renderWallet(); shopMsg.textContent='bought the '+it.name+'! ✨ looking great'; }
-        } else { shopMsg.textContent = it.type==='decor' ? 'the '+it.name+' is already out in your garden 🌷' : 'wearing the '+it.name+' 💚'; }
-        if(it.type==='crown'){ SPROUT.crown=it.key; refreshSproutEverywhere(); }
-        renderShop(); });
+          WALLET.coins-=it.price; WALLET.owned.push(it.key); saveWallet(); renderWallet();
+          shopMsg.textContent='bought the '+it.name+'! ✨ looking great';
+        } else { shopMsg.textContent='wearing the '+it.name+' 💚'; }
+        SPROUT.crown=it.key; refreshSproutEverywhere(); renderShop(); });
       shopItems.appendChild(b); });
     // original creator crowns stay wearable for free
     var back=document.createElement('button'); back.type='button'; back.className='type-opt';
@@ -1094,7 +1062,7 @@
       .observe(document.getElementById('w-shop'), {attributes:true, attributeFilter:['class']}); }
 
   if(napBtn){ napBtn.addEventListener('click', tuckIn);
-    new MutationObserver(function(){ if(document.getElementById('w-nap').classList.contains('open')){ if(!napping){ drawNap(); refreshNapUI(); } } else { napping=false; } })
+    new MutationObserver(function(){ if(document.getElementById('w-nap').classList.contains('open')){ if(!napping){ drawNap(); napMsg.textContent = PET.energy>=90 ? 'your Sproutling is wide awake 😊' : 'tuck your Sproutling in for a cozy nap 💤'; if(napFill) napFill.style.width='0'; } } else { napping=false; } })
       .observe(document.getElementById('w-nap'), {attributes:true, attributeFilter:['class']}); }
 
   /* ---------- Fairies (visit blooms · night swarm · clickable wishes · ring · cursor dust) ---------- */
@@ -1404,4 +1372,3 @@
   draw(); setInterval(function(){ T+=80; draw(); }, 80);
 })();
 </script>
-</body></html>
