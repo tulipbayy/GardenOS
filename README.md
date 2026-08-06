@@ -35,7 +35,8 @@ play with it, tuck it in, and decorate the garden you share.
   real-elapsed-time decay
 
 ## 🚀 Run it
-
+Open this link https://tulipbayy.github.io/GardenOS 
+OR
 Open `index.html` in a browser. That's it — it's one self-contained file.
 
 ## 💌 Made with pixels & love
