@@ -22,8 +22,8 @@ play with it, tuck it in, and decorate the garden you share.
   for your Sproutling and garden decor (the firefly lantern glows at night). Drag decor
   anywhere in your garden.
 - **🕐 A living world** — the scene follows your real clock: bright mid-day, golden dusk, starry
-  night (or cycle moods manually). Fairies visit blooms, bees drift by, fireflies come out after
-  dark — and planting 3 toadstools summons a secret fairy ring. 🍄🧚
+  night (or cycle moods manually). Rain waters your garden and ends in sunseed-paying rainbows,
+  shooting stars streak the night, fairies visit blooms, and fireflies come out after dark. 🧚
 
 ## 🛠️ Built with
 

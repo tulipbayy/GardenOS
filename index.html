@@ -1,4 +1,5 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='4' fill='%23aeddf0'/><rect x='7' y='3' width='2' height='3' fill='%2357a15f'/><rect x='5' y='2' width='2' height='2' fill='%236fbf73'/><rect x='9' y='1' width='2' height='2' fill='%236fbf73'/><rect x='3' y='6' width='10' height='7' rx='3' fill='%23bfe9cf'/><rect x='5' y='8' width='2' height='2' fill='%233a2e3b'/><rect x='9' y='8' width='2' height='2' fill='%233a2e3b'/><rect x='4' y='10' width='1' height='1' fill='%23ff9ecf'/><rect x='11' y='10' width='1' height='1' fill='%23ff9ecf'/></svg>">
 <title>Bayansulu's GardenOS 🌱</title>
 <style>
   :root {
@@ -128,11 +129,6 @@
   .fairy canvas { filter:drop-shadow(0 0 4px #ffd9f4); }
   #fairies.night .fairy canvas { filter:drop-shadow(0 0 8px #c9a8ff); }
   .fairy:hover canvas { filter:drop-shadow(0 0 9px #fff) drop-shadow(0 0 4px #ffd9f4); }
-  .fairy-ring { position:absolute; width:96px; height:40px; transform:translateX(-50%);
-    opacity:.9; animation:ringspin 14s linear infinite; }
-  .fairy-ring i { position:absolute; width:4px; height:4px; background:#e6c8ff; box-shadow:0 0 5px #d9b0ff; }
-  .fairy-ring i:nth-child(odd){ background:#fff2b0; box-shadow:0 0 5px #ffe08a; }
-  @keyframes ringspin { to { transform:translateX(-50%) rotate(360deg); } }
   .sparkle { position:fixed; width:4px; height:4px; background:#fff; border-radius:1px; pointer-events:none; z-index:200;
     box-shadow:0 0 6px 2px #ffe0f4; animation:sburst .6s ease-out forwards; }
   @keyframes sburst { from{ transform:translate(0,0) scale(1); opacity:1; } to{ transform:translate(var(--dx),var(--dy)) scale(.3); opacity:0; } }
@@ -362,7 +358,7 @@
   #dntoggle:hover { background:#fff; }
 
   @media (prefers-reduced-motion: reduce) {
-    #cloud1,#cloud2,#sun::after,.star,.fairy-ring,.sparkle,.dust,#buddyCanvas.bob,#buddyZ.on,
+    #cloud1,#cloud2,#sun::after,.star,.sparkle,.dust,#buddyCanvas.bob,#buddyZ.on,
     .petal,.ff,#catNap,.turbine .blades,
     #desktop-garden canvas.sprout-pop,#desktop-garden canvas.watered { animation:none !important; }
     .win.open { animation:none; }
@@ -1140,7 +1136,7 @@
   /* ---------- Fairies (visit blooms · night swarm · clickable wishes · ring · cursor dust) ---------- */
   var fairyLayer=document.getElementById('fairies');
   var reduceMo=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var fairyPool=[], bugPool=[], ringEl=null, ringShown=false, rafId=null;
+  var fairyPool=[], bugPool=[], rafId=null;
 
   function bloomTargets(){ var t=[]; plants.forEach(function(p){ if(stageOf(p.t)===2){
     t.push({ x: window.innerWidth*p.x/100 + 22, y: window.innerHeight - 44 - (p.y||0) - 66 }); } }); return t; }
@@ -1194,16 +1190,6 @@
         plants.push({ t:Date.now(), w:Date.now(), type:ty.id, x:6+Math.random()*88, y:(Math.random()*168)|0, spread:true });
         saveGarden(plants); renderGarden(true); toast('🌱 a fairy gifted you a '+ty.name+'!'); }
       else toast('🧚 the fairies bless your full garden!'); } }
-  function checkRing(){ if(!fairyLayer) return;
-    var mush=plants.filter(function(p){ return p.type==='mush' && stageOf(p.t)===2; });
-    if(mush.length>=3){ var cx=0; mush.forEach(function(p){ cx+=p.x; }); cx/=mush.length;
-      if(!ringEl){ ringEl=document.createElement('div'); ringEl.className='fairy-ring';
-        for(var ri=0;ri<14;ri++){ var rd=document.createElement('i'), ra=ri/14*6.2832;
-          rd.style.left=(50+Math.cos(ra)*46)+'%'; rd.style.top=(50+Math.sin(ra)*40)+'%'; ringEl.appendChild(rd); }
-        fairyLayer.appendChild(ringEl);
-        if(!ringShown){ ringShown=true; toast('🍄🧚 a fairy ring appeared!'); } }
-      ringEl.style.left=(window.innerWidth*cx/100)+'px'; ringEl.style.bottom='58px'; }
-    else if(ringEl){ ringEl.remove(); ringEl=null; ringShown=false; } }
 
   if(!reduceMo){ var lastDust=0;
     document.getElementById('desktop').addEventListener('pointermove', function(e){
@@ -1214,7 +1200,6 @@
   syncFairies();
   dnBtn.addEventListener('click', syncFairies);
   if(!reduceMo) rafId=requestAnimationFrame(fairyLoop);
-  setInterval(checkRing, 3000); checkRing();
 
   /* ---------- Ambient life: bugs (day), petals, fireflies (night), cat ---------- */
   var bugLayer=document.getElementById('bugs');
@@ -1302,7 +1287,7 @@
     {sel:'#iconsR', t:'The care apps', x:'Caring happens in little apps: harvest & feed treats in the 🍎 Kitchen (it has a favourite!), pop bubbles together in the 🎈 Playground, and tuck it in at the 💤 Nap Nook.'},
     {sel:'#wallet', t:'Sunseeds 🌻', x:'Harvesting blooms earns sunseeds. Spend them in the 🛒 Seed Shop on crowns for your Sproutling and garden decor — and drag decor anywhere in your garden.'},
     {sel:'#dntoggle', t:'Time of day 🕐', x:'The world follows your real clock — sunny midday, golden dusk, starry night. Click here to cycle moods yourself. At night your Sproutling sleeps (and recharges).'},
-    {sel:null, t:'Fairies ✨', x:'Pixel fairies drift toward your blooms. Click one for a wish — fairy dust or a free flower! (Psst: plant 3 toadstools for a secret fairy ring.)'},
+    {sel:null, t:'Fairies ✨', x:'Pixel fairies drift toward your blooms — and swarm after dark. Click one for a wish: fairy dust or even a free flower!'},
     {sel:null, t:'That’s GardenOS! 🌱', x:'Your Sproutling, garden, wallet and decor are all saved for next time. Replay this guide anytime with the ❓ button. Enjoy!'}
   ];
   var curStep=0;

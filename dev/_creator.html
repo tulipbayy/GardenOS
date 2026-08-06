@@ -1,4 +1,6 @@
-<!doctype html><html><head><meta charset='utf-8'></head><body><title>Bayansulu's GardenOS 🌱</title>
+<!doctype html><html><head><meta charset='utf-8'></head><body><meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='4' fill='%23aeddf0'/><rect x='7' y='3' width='2' height='3' fill='%2357a15f'/><rect x='5' y='2' width='2' height='2' fill='%236fbf73'/><rect x='9' y='1' width='2' height='2' fill='%236fbf73'/><rect x='3' y='6' width='10' height='7' rx='3' fill='%23bfe9cf'/><rect x='5' y='8' width='2' height='2' fill='%233a2e3b'/><rect x='9' y='8' width='2' height='2' fill='%233a2e3b'/><rect x='4' y='10' width='1' height='1' fill='%23ff9ecf'/><rect x='11' y='10' width='1' height='1' fill='%23ff9ecf'/></svg>">
+<title>Bayansulu's GardenOS 🌱</title>
 <style>
   :root {
     /* DAY (default) */
@@ -127,11 +129,6 @@
   .fairy canvas { filter:drop-shadow(0 0 4px #ffd9f4); }
   #fairies.night .fairy canvas { filter:drop-shadow(0 0 8px #c9a8ff); }
   .fairy:hover canvas { filter:drop-shadow(0 0 9px #fff) drop-shadow(0 0 4px #ffd9f4); }
-  .fairy-ring { position:absolute; width:96px; height:40px; transform:translateX(-50%);
-    opacity:.9; animation:ringspin 14s linear infinite; }
-  .fairy-ring i { position:absolute; width:4px; height:4px; background:#e6c8ff; box-shadow:0 0 5px #d9b0ff; }
-  .fairy-ring i:nth-child(odd){ background:#fff2b0; box-shadow:0 0 5px #ffe08a; }
-  @keyframes ringspin { to { transform:translateX(-50%) rotate(360deg); } }
   .sparkle { position:fixed; width:4px; height:4px; background:#fff; border-radius:1px; pointer-events:none; z-index:200;
     box-shadow:0 0 6px 2px #ffe0f4; animation:sburst .6s ease-out forwards; }
   @keyframes sburst { from{ transform:translate(0,0) scale(1); opacity:1; } to{ transform:translate(var(--dx),var(--dy)) scale(.3); opacity:0; } }
@@ -217,6 +214,7 @@
   /* ---------- Windows ---------- */
   .win {
     position:absolute; min-width:260px; display:none; flex-direction:column; z-index:10;
+    max-height:calc(100vh - 90px);
     background:var(--win); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
     border:3px solid var(--border); border-radius:12px;
     box-shadow:0 14px 34px #0003, inset 0 1px 0 #ffffff70;
@@ -360,12 +358,15 @@
   #dntoggle:hover { background:#fff; }
 
   @media (prefers-reduced-motion: reduce) {
-    #cloud1,#cloud2,#sun::after,.star,.fairy-ring,.sparkle,.dust,#buddyCanvas.bob,#buddyZ.on,
+    #cloud1,#cloud2,#sun::after,.star,.sparkle,.dust,#buddyCanvas.bob,#buddyZ.on,
     .petal,.ff,#catNap,.turbine .blades,
     #desktop-garden canvas.sprout-pop,#desktop-garden canvas.watered { animation:none !important; }
     .win.open { animation:none; }
   }
-  @media (max-width:560px){ #icons{ top:14px; left:12px; gap:14px; } #iconsR{ top:14px; right:12px; gap:14px; } .win{ min-width:0; width:92vw; left:4vw!important; } }
+  @media (max-width:560px){ #icons{ top:14px; left:12px; gap:14px; } #iconsR{ top:14px; right:12px; gap:14px; }
+    .win{ min-width:0; width:92vw; left:4vw!important; }
+    #clock{ display:none; } #taskbar{ gap:6px; } .dicon{ width:64px; } .dicon .tile{ width:52px; height:52px; }
+    #tasks{ overflow-x:auto; } }
   /* new pixel-art world scene (golden-hour) replaces the flat CSS background */
   #worldScene{ position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; image-rendering:crisp-edges; z-index:0; pointer-events:none; }
   #stars,#sun,.cloud,#hills,#tower,#village,#trees,#catNap{ display:none!important; }
@@ -1112,6 +1113,22 @@
   if(shopCrowns){ new MutationObserver(function(){ if(document.getElementById('w-shop').classList.contains('open')) renderShop(); })
       .observe(document.getElementById('w-shop'), {attributes:true, attributeFilter:['class']}); }
 
+  /* ---- Weather & sky events: rain waters the garden, rainbows pay sunseeds, shooting stars at night ---- */
+  var weather='clear', rainEnd=0, rainbowEnd=0;
+  function setWeather(w){ weather=w; window.__weather=w; }
+  setWeather('clear');
+  setInterval(function(){
+    if(document.hidden) return;
+    if(isNight()){ if(weather!=='clear') setWeather('clear');
+      if(Math.random()<0.10){ window.__shootStar=Date.now();
+        if(Math.random()<0.3){ addCoins(1); toast('a shooting star! 🌠 +1 sunseed'); } }
+      return; }
+    if(weather==='clear'){ if(Math.random()<0.03){ setWeather('rain'); rainEnd=Date.now()+45000; toast('rain is falling — the garden drinks it up 🌧️'); } }
+    else if(weather==='rain'){ var nw=Date.now(); if(plants.length){ plants.forEach(function(p){ p.w=nw; }); saveGarden(plants); }
+      if(nw>rainEnd){ setWeather('rainbow'); rainbowEnd=nw+30000; addCoins(5); toast('a rainbow! 🌈 +5 sunseeds'); } }
+    else if(weather==='rainbow'){ if(Date.now()>rainbowEnd) setWeather('clear'); }
+  }, 8000);
+
   if(napBtn){ napBtn.addEventListener('click', tuckIn);
     new MutationObserver(function(){ if(document.getElementById('w-nap').classList.contains('open')){ if(!napping){ drawNap(); refreshNapUI(); } } else { napping=false; } })
       .observe(document.getElementById('w-nap'), {attributes:true, attributeFilter:['class']}); }
@@ -1119,7 +1136,7 @@
   /* ---------- Fairies (visit blooms · night swarm · clickable wishes · ring · cursor dust) ---------- */
   var fairyLayer=document.getElementById('fairies');
   var reduceMo=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var fairyPool=[], bugPool=[], ringEl=null, ringShown=false, rafId=null;
+  var fairyPool=[], bugPool=[], rafId=null;
 
   function bloomTargets(){ var t=[]; plants.forEach(function(p){ if(stageOf(p.t)===2){
     t.push({ x: window.innerWidth*p.x/100 + 22, y: window.innerHeight - 44 - (p.y||0) - 66 }); } }); return t; }
@@ -1173,16 +1190,6 @@
         plants.push({ t:Date.now(), w:Date.now(), type:ty.id, x:6+Math.random()*88, y:(Math.random()*168)|0, spread:true });
         saveGarden(plants); renderGarden(true); toast('🌱 a fairy gifted you a '+ty.name+'!'); }
       else toast('🧚 the fairies bless your full garden!'); } }
-  function checkRing(){ if(!fairyLayer) return;
-    var mush=plants.filter(function(p){ return p.type==='mush' && stageOf(p.t)===2; });
-    if(mush.length>=3){ var cx=0; mush.forEach(function(p){ cx+=p.x; }); cx/=mush.length;
-      if(!ringEl){ ringEl=document.createElement('div'); ringEl.className='fairy-ring';
-        for(var ri=0;ri<14;ri++){ var rd=document.createElement('i'), ra=ri/14*6.2832;
-          rd.style.left=(50+Math.cos(ra)*46)+'%'; rd.style.top=(50+Math.sin(ra)*40)+'%'; ringEl.appendChild(rd); }
-        fairyLayer.appendChild(ringEl);
-        if(!ringShown){ ringShown=true; toast('🍄🧚 a fairy ring appeared!'); } }
-      ringEl.style.left=(window.innerWidth*cx/100)+'px'; ringEl.style.bottom='58px'; }
-    else if(ringEl){ ringEl.remove(); ringEl=null; ringShown=false; } }
 
   if(!reduceMo){ var lastDust=0;
     document.getElementById('desktop').addEventListener('pointermove', function(e){
@@ -1193,7 +1200,6 @@
   syncFairies();
   dnBtn.addEventListener('click', syncFairies);
   if(!reduceMo) rafId=requestAnimationFrame(fairyLoop);
-  setInterval(checkRing, 3000); checkRing();
 
   /* ---------- Ambient life: bugs (day), petals, fireflies (night), cat ---------- */
   var bugLayer=document.getElementById('bugs');
@@ -1281,7 +1287,7 @@
     {sel:'#iconsR', t:'The care apps', x:'Caring happens in little apps: harvest & feed treats in the 🍎 Kitchen (it has a favourite!), pop bubbles together in the 🎈 Playground, and tuck it in at the 💤 Nap Nook.'},
     {sel:'#wallet', t:'Sunseeds 🌻', x:'Harvesting blooms earns sunseeds. Spend them in the 🛒 Seed Shop on crowns for your Sproutling and garden decor — and drag decor anywhere in your garden.'},
     {sel:'#dntoggle', t:'Time of day 🕐', x:'The world follows your real clock — sunny midday, golden dusk, starry night. Click here to cycle moods yourself. At night your Sproutling sleeps (and recharges).'},
-    {sel:null, t:'Fairies ✨', x:'Pixel fairies drift toward your blooms. Click one for a wish — fairy dust or a free flower! (Psst: plant 3 toadstools for a secret fairy ring.)'},
+    {sel:null, t:'Fairies ✨', x:'Pixel fairies drift toward your blooms — and swarm after dark. Click one for a wish: fairy dust or even a free flower!'},
     {sel:null, t:'That’s GardenOS! 🌱', x:'Your Sproutling, garden, wallet and decor are all saved for next time. Replay this guide anytime with the ❓ button. Enjoy!'}
   ];
   var curStep=0;
@@ -1406,6 +1412,18 @@
     ctx.save(); ctx.globalAlpha=P.night?0.45:0.6; ctx.fillStyle=rg; ctx.fillRect(sx-sr*4,sy-sr*4,sr*8,sr*8); ctx.restore();
     disc(sx,sy,sr,P.sun); disc(sx,sy,sr-2,P.sunCore); if(P.night){ disc(sx-2,sy-1,1,shade(P.sun,-0.12)); disc(sx+2,sy+2,1,shade(P.sun,-0.12)); }
     for(var c=0;c<4;c++){ var cw=Math.round(W*0.13), cx=Math.round((((T/(70+c*22))+c*W/4)%(W+cw*2))-cw), cy=Math.round(horizon*0.22+c*horizon*0.12); cloud(cx,cy,cw,P); }
+    // 🌈 rainbow (after rain) — arcs behind the hills
+    if(window.__weather==='rainbow' && !P.night){ var RB=['#f28a8a','#f5c451','#fff2a0','#8fce8a','#8fb8d8','#c9a0ea'];
+      var rcx=Math.round(W*0.42), rcy=horizon+8;
+      ctx.save(); ctx.globalAlpha=0.55;
+      for(var b=0;b<RB.length;b++){ var rr=Math.round(H*0.52)-b*2; ctx.fillStyle=RB[b];
+        for(var rx=-rr;rx<=rr;rx++){ var ry=Math.round(Math.sqrt(Math.max(0,rr*rr-rx*rx))); var yy2=rcy-ry;
+          if(yy2>=0&&yy2<horizon+4) ctx.fillRect(rcx+rx,yy2,1,2); } }
+      ctx.restore(); }
+    // 🌠 shooting star (night) — brief diagonal streak
+    if(P.night && window.__shootStar){ var sp=(Date.now()-window.__shootStar)/1200;
+      if(sp>=0&&sp<=1){ var hx2=Math.round(W*(0.15+sp*0.55)), hy2=Math.round(H*0.08+sp*H*0.18);
+        for(var tl=0;tl<7;tl++){ ctx.fillStyle=tl<2?'#ffffff':'#cfd0ea'; ctx.fillRect(hx2-tl*2,hy2-tl,2,1); } } }
     hill(W,H, function(x){ return horizon-3 + Math.sin(x*0.014+1)*3 + Math.sin(x*0.033)*2; }, P.farHill);
     var vY=function(x){ return horizon+6 + Math.sin(x*0.009+3)*7 + Math.sin(x*0.021+1)*3; };
     hill(W,H, vY, P.midHill, P.midHi, P.midShade);
@@ -1418,6 +1436,12 @@
     for(var bx=Math.round(W*0.1); bx<W*0.45; bx+=bw+3){ r(bx,bedY,bw,3,P.soil); r(bx,bedY,bw,1,shade(P.soil,0.14)); for(var sp=bx+1;sp<bx+bw;sp+=2){ px(sp,bedY-2,P.leaf); px(sp,bedY-1,P.leaf); } }
     var fcY=Math.round(H*0.82); for(var fx=1;fx<W;fx+=6){ r(fx,fcY-1,1,6,P.fence); } r(0,fcY+1,W,1,P.fence); r(0,fcY+3,W,1,shade(P.fence,-0.15));
     for(var wf=2;wf<W;wf+=Math.round(W*0.028)){ var wy=fy+4+((wf*29)%Math.max(2,H-fy-5)); px(wf,wy-1,P.leaf); px(wf,wy,P.fl[(wf/5|0)%4]); }
+    // 🌧️ rain — falling streaks + a cool damp tint over everything
+    if(window.__weather==='rain' && !P.night){
+      ctx.fillStyle='rgba(70,90,120,0.16)'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='rgba(190,215,240,0.75)';
+      for(var rn=0;rn<Math.round(W/4);rn++){ var rxx=(rn*53+((T/2)|0))%W, ryy=((rn*97)+((T/1.1)|0))%H;
+        ctx.fillRect(rxx,ryy,1,3); } }
     ctx.save(); ctx.globalCompositeOperation='soft-light'; ctx.globalAlpha=P.gradeA; ctx.fillStyle=P.grade; ctx.fillRect(0,0,W,H); ctx.restore();
     var vg=ctx.createRadialGradient(W/2,H*0.5,H*0.45,W/2,H*0.55,H*1.15); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,P.night?'rgba(6,4,20,0.5)':'rgba(90,50,20,0.13)'); ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
   }

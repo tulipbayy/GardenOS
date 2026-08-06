@@ -96,9 +96,10 @@ const proc = spawn("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   await new Promise(r=>setTimeout(r,500));
   var s2=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"desktop.png"),Buffer.from(s2.data,"base64"));
   console.log("default scene:", (await send("Runtime.evaluate",{expression:`document.documentElement.getAttribute('data-scene')`,returnByValue:true})).result.value);
-  await send("Runtime.evaluate",{expression:`var b=document.getElementById('dntoggle'); b.click(); b.click(); b.click();`});
+  await send("Runtime.evaluate",{expression:`(function(){ var b=document.getElementById('dntoggle'), g=0;
+    while(document.documentElement.getAttribute('data-scene')!=='night' && g<5){ b.click(); g++; } })()`});
   await new Promise(r=>setTimeout(r,500));
-  console.log("after 3 clicks:", (await send("Runtime.evaluate",{expression:`document.documentElement.getAttribute('data-scene')`,returnByValue:true})).result.value);
+  console.log("forced scene:", (await send("Runtime.evaluate",{expression:`document.documentElement.getAttribute('data-scene')`,returnByValue:true})).result.value);
   var s3=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"desktop_night.png"),Buffer.from(s3.data,"base64"));
   // night consistency: nap nook must agree the pet is asleep, messages use the pet's name
   var nc=await send("Runtime.evaluate",{expression:`(function(){ document.querySelector('[data-open="buddy"]').click(); document.querySelector('[data-open="nap"]').click();
