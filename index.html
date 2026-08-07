@@ -265,6 +265,7 @@
   #buddyCanvas.bob { animation:bob 3.4s infinite ease-in-out; }
   @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
   #buddyCanvas.hop { animation:hop .5s ease; }
+  #buddyCanvas.radiant { filter:drop-shadow(0 0 9px #ffd27a); }
   @keyframes hop { 0%,100%{transform:translateY(0);} 40%{transform:translateY(-18px);} 70%{transform:translateY(0);} }
   .mood { font-size:12px; color:var(--muted); margin:6px 0 8px; min-height:16px; }
   #petStats { margin:2px 0 10px; display:flex; flex-direction:column; gap:5px; }
@@ -420,7 +421,7 @@
       </div>
       <p style="margin-bottom:10px;"><b>welcome!</b> 🌱 design your own <b>Sproutling</b>, keep it happy, and grow a living garden right across your desktop.</p>
       <p>feed, play &amp; rest your Sproutling — its needs drift over real time, so it'll be waiting when you come back. plant flowers that bloom, meet fairies, and watch day turn to night. 🌸</p>
-      <p style="margin-top:10px;">made with pixels &amp; love by <b>Bayansulu Tulepbayeva</b></p>
+      <p style="margin-top:10px;">made with pixels &amp; love by <b>Bayansulu Tulepbayeva</b> — <a href="https://tulipbayy.github.io/room-portfolio/" target="_blank" rel="noopener">visit my room 🌸</a></p>
       <p>say hi → <a href="mailto:btulepbayeva@smith.edu">email</a> · <a href="https://linkedin.com/in/bayansulu-tulepbayeva" target="_blank" rel="noopener">linkedin</a></p>
     </div>
   </section>
@@ -496,6 +497,7 @@
         <div class="statrow"><span class="stat-ic" title="fed">🍎</span><div class="bar"><i id="barHunger"></i></div></div>
         <div class="statrow"><span class="stat-ic" title="happy">😊</span><div class="bar"><i id="barHappy"></i></div></div>
         <div class="statrow"><span class="stat-ic" title="energy">⚡</span><div class="bar"><i id="barEnergy"></i></div></div>
+        <div class="statrow"><span class="stat-ic" id="growthIc" title="growth — care well to evolve!">🌱</span><div class="bar"><i id="barGrowth"></i></div></div>
       </div>
       <div class="btnrow">
         <button class="y2kbtn" id="feedBtn">🍎 feed</button>
@@ -711,9 +713,15 @@
   };
   function stampGrid(base, ov, row0){ for(var y=0;y<ov.length;y++){ var r=ov[y]; for(var x=0;x<r.length;x++){ var ch=r[x];
     if(ch!=='.'){ var Y=row0+y; if(base[Y]!=null) base[Y]=base[Y].substring(0,x)+ch+base[Y].substring(x+1); } } } }
-  function composeSprout(cfg, shut){ var g=BODY.slice();
+  function setPx(g,y,x,ch){ if(g[y]!=null) g[y]=g[y].substring(0,x)+ch+g[y].substring(x+1); }
+  function composeSprout(cfg, shut, stage){ var g=BODY.slice();
     stampGrid(g, CROWNS[cfg.crown]||CROWNS.sprout, 0);
     stampGrid(g, EARS[cfg.shape]||EARS.round, 1);
+    if(stage>=1){ // bloomed: little leaf-arms
+      setPx(g,6,1,'g'); setPx(g,7,0,'g'); setPx(g,7,1,'s');
+      setPx(g,6,14,'g'); setPx(g,7,15,'g'); setPx(g,7,14,'s'); }
+    if(stage>=2){ // radiant: golden sparkles
+      setPx(g,5,2,'y'); setPx(g,5,13,'y'); setPx(g,13,1,'y'); setPx(g,13,14,'y'); }
     if(shut){ g[8]="oSSSSSSSSSSSSSSo"; g[9]="oSSSooSSSSooSSSo"; }
     return g; }
   var SPROUT_KEY='gardenos_sprout_v1';
@@ -721,7 +729,8 @@
   function saveSprout(cfg){ try{ localStorage.setItem(SPROUT_KEY, JSON.stringify(cfg)); }catch(e){} }
   var BODY_COLORS=[['mint','#bfe9cf'],['cream','#fff0cf'],['peach','#ffcdb2'],['sky','#bcd8f0'],['lilac','#dcc6f2'],['rose','#ffc2d6']];
   function applySprout(cfg){ PAL.S=cfg.color||'#bfe9cf'; PAL.P=cfg.cheek||'#ff9ecf';
-    SPR.buddyOpen=composeSprout(cfg,false); SPR.buddyShut=composeSprout(cfg,true); }
+    var st=0; try{ st=petStage(); }catch(e){}
+    SPR.buddyOpen=composeSprout(cfg,false,st); SPR.buddyShut=composeSprout(cfg,true,st); }
   function setSproutName(name){ var tt=document.querySelector('#w-buddy .ttl'); if(tt) tt.textContent='🌱 '+name;
     var lb=document.querySelector('.dicon[data-open="buddy"] .lbl'); if(lb) lb.textContent=name; }
   var SPROUT=loadSprout(); if(SPROUT){ applySprout(SPROUT); setSproutName(SPROUT.name||'Sprout'); }
@@ -849,27 +858,39 @@
   /* ---- Sproutling care stats (real-time tamagotchi) ---- */
   var PET_KEY='gardenos_pet_v1';
   function clampS(v){ return v<0?0:v>100?100:v; }
-  function loadPet(){ try{ var p=JSON.parse(localStorage.getItem(PET_KEY)); if(p&&typeof p.hunger==='number') return p; }catch(e){}
-    return {hunger:85,happy:85,energy:85,seen:Date.now()}; }
+  function loadPet(){ try{ var p=JSON.parse(localStorage.getItem(PET_KEY)); if(p&&typeof p.hunger==='number'){ p.growth=p.growth||0; p.stage=p.stage||0; return p; } }catch(e){}
+    return {hunger:85,happy:85,energy:85,growth:0,stage:0,seen:Date.now()}; }
   var PET=loadPet();
   function savePet(){ PET.seen=Date.now(); try{ localStorage.setItem(PET_KEY,JSON.stringify(PET)); }catch(e){} }
   function decayPet(){ var el=(Date.now()-(PET.seen||Date.now()))/3600000; if(el<=0){ PET.seen=Date.now(); return; }
     PET.hunger=clampS(PET.hunger-el*11); PET.happy=clampS(PET.happy-el*8);
-    PET.energy=clampS(PET.energy+(isNight()? el*16 : -el*6)); PET.seen=Date.now(); }
-  var bH=document.getElementById('barHunger'), bA=document.getElementById('barHappy'), bE=document.getElementById('barEnergy');
+    PET.energy=clampS(PET.energy+(isNight()? el*16 : -el*6));
+    if(Math.min(PET.hunger,PET.happy,PET.energy)>55) PET.growth=Math.min(100,(PET.growth||0)+el*2);   // healthy time = slow growth
+    PET.seen=Date.now(); }
+  function petStage(){ var gw=(PET&&PET.growth)||0; return gw>=80?2:gw>=35?1:0; }
+  var STAGE_NAMES=['seedling','bloomed','radiant'];
+  function checkEvolution(){ var st=petStage(); if((PET.stage||0)===st) return;
+    var up=st>(PET.stage||0); PET.stage=st; savePet(); applySprout(SPROUT); saveSprout(SPROUT);
+    try{ refreshSproutEverywhere(); }catch(e){ try{ refreshBuddy(); }catch(_){}}
+    if(up){ toast(st===2 ? pn()+' is RADIANT now! ✨👑' : pn()+' bloomed! 🌸'); try{ petHop(); }catch(e){} } }
+  var bH=document.getElementById('barHunger'), bA=document.getElementById('barHappy'), bE=document.getElementById('barEnergy'), bG=document.getElementById('barGrowth'), gIc=document.getElementById('growthIc');
   function statColor(v){ return v>55?'#7fce8a':v>25?'#f5c451':'#f28a8a'; }
-  function updateBars(){ [[bH,PET.hunger],[bA,PET.happy],[bE,PET.energy]].forEach(function(p){ if(p[0]){ p[0].style.width=p[1]+'%'; p[0].style.background=statColor(p[1]); } }); }
+  function updateBars(){ [[bH,PET.hunger],[bA,PET.happy],[bE,PET.energy]].forEach(function(p){ if(p[0]){ p[0].style.width=p[1]+'%'; p[0].style.background=statColor(p[1]); } });
+    if(bG){ var gw=PET.growth||0; bG.style.width=gw+'%'; bG.style.background = gw>=80?'#ffd27a':'#a8d88a'; }
+    if(gIc){ var st=petStage(); gIc.textContent=st===2?'✨':st===1?'🌸':'🌱'; gIc.title='growth: '+STAGE_NAMES[st]+' ('+Math.round(PET.growth||0)+'%)'; } }
   function petNeedMood(){ if(!PET) return null; var lo=Math.min(PET.hunger,PET.happy,PET.energy); if(lo>30) return null;
     if(PET.hunger===lo) return pn()+' is getting hungry 🍎'; if(PET.energy===lo) return pn()+' is sleepy… 💤'; return pn()+' wants to play 🎈'; }
   function petHop(){ buddyCv.classList.remove('hop'); void buddyCv.offsetWidth; buddyCv.classList.add('hop'); }
   function care(stat, amt, cost, msg){ if(isNight()) return; decayPet();
     PET[stat]=clampS(PET[stat]+amt); if(cost) PET.energy=clampS(PET.energy-cost);
-    savePet(); updateBars(); petHop(); moodEl.textContent=msg; }
+    PET.growth=Math.min(100,(PET.growth||0)+3);   // every act of care grows the sprout
+    savePet(); updateBars(); petHop(); moodEl.textContent=msg; checkEvolution(); }
 
   function refreshBuddy(){
     var night=isNight();
     draw(buddyCv, night?SPR.buddyShut:SPR.buddyOpen, 7);
     buddyCv.classList.toggle('bob', !night);
+    buddyCv.classList.toggle('radiant', petStage()===2);
     zEl.classList.toggle('on', night);
     [feedBtn,playBtn,restBtn,plantBtn,waterBtn].forEach(function(b){ if(b) b.disabled=night; });
     updateBars();
@@ -886,8 +907,9 @@
   // decay over real time + persist
   setInterval(function(){ decayPet(); savePet(); updateBars(); if(!isNight()){ var nm=petNeedMood(); if(nm) moodEl.textContent=nm; } }, 20000);
   window.addEventListener('beforeunload', savePet);
-  document.addEventListener('visibilitychange', function(){ if(document.hidden) savePet(); else { decayPet(); updateBars(); } });
-  decayPet(); updateBars();
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) savePet(); else { decayPet(); updateBars(); checkEvolution(); } });
+  decayPet(); updateBars(); checkEvolution();
+  setInterval(function(){ if(!document.hidden){ decayPet(); updateBars(); checkEvolution(); } }, 60000);   // stats & growth tick while playing
 
   /* ---- Playground: bubble-pop mini-game (raises happiness, costs energy) ---- */
   var playCv=document.getElementById('playCv'), pctx=playCv&&playCv.getContext('2d');

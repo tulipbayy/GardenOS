@@ -67,7 +67,7 @@ HTML/CSS/JavaScript, heavily commented.
 2. **Add file → Upload files** → drag in `index.html`, `README.md`, and `screenshot.png` → Commit.
    *(You do NOT need the `photos/` folder online — the photos are already inside index.html.)*
 3. Repo → **Settings → Pages** → Source: **main / root** → Save.
-4. In ~1 min your site is live at **https://tulipbayy.github.io/room/**. That's your link to share.
+4. In ~1 min your site is live at **https://tulipbayy.github.io/room-portfolio/**. That's your link to share.
 
 ### How to UPDATE it later
 Edit `index.html`, then re-upload it to the repo (Add file → Upload files → replace) — or, if you
@@ -108,7 +108,7 @@ Edit/host it exactly like the room portfolio (single `index.html`).
 
 ## 🔑 Accounts & links — quick reference
 - **GitHub:** github.com/tulipbayy  *(add a personal email!)*
-- **Portfolio (once hosted):** https://tulipbayy.github.io/room/
+- **Portfolio (once hosted):** https://tulipbayy.github.io/room-portfolio/
 - **Supabase (guestbook DB):** supabase.com → project `tyajnbbtgerbdvvtqoii`
 - **Résumé:** Google Doc (on Smith email — copy to personal if needed)
 - **LinkedIn:** linkedin.com/in/bayansulu-tulepbayeva (verify)

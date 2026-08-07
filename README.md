@@ -40,4 +40,4 @@ Open `index.html` in a browser. That's it — it's one self-contained file.
 
 ## 💌 Made with pixels & love
 
-by **Bayansulu Tulepbayeva** — also see my [pixel room portfolio](https://tulipbayy.github.io/room/).
+by **Bayansulu Tulepbayeva** — also see my [pixel room portfolio](https://tulipbayy.github.io/room-portfolio/).

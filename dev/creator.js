@@ -105,6 +105,18 @@ const proc = spawn("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   var nc=await send("Runtime.evaluate",{expression:`(function(){ document.querySelector('[data-open="buddy"]').click(); document.querySelector('[data-open="nap"]').click();
     return JSON.stringify({ mood:document.getElementById('mood').textContent, napDisabled:document.getElementById('napBtn').disabled, napMsg:document.getElementById('napMsg').textContent }); })()`,returnByValue:true});
   console.log("NIGHT-CONSISTENCY:", nc.result.value);
+  // evolution: seed a 90-growth pet, reload, expect stage 2 (radiant) everywhere
+  await send("Runtime.evaluate",{expression:`(function(){ var p=JSON.parse(localStorage.getItem('gardenos_pet_v1')); p.growth=90; p.stage=0; p.hunger=80;p.happy=80;p.energy=80; p.seen=Date.now();
+    var orig=localStorage.setItem.bind(localStorage);
+    localStorage.setItem=function(k,v){ if(k==='gardenos_pet_v1') return; orig(k,v); };   // the app's unload savePet() must not clobber the seed
+    orig('gardenos_pet_v1', JSON.stringify(p)); })()`});
+  await send("Page.reload"); await new Promise(r=>setTimeout(r,1400));
+  var evo=await send("Runtime.evaluate",{expression:`(function(){ document.querySelector('[data-open="buddy"]').click();
+    var p=JSON.parse(localStorage.getItem('gardenos_pet_v1'));
+    return JSON.stringify({stage:p.stage, radiantClass:document.getElementById('buddyCanvas').classList.contains('radiant'),
+      growthIcon:document.getElementById('growthIc').textContent, growthBar:document.getElementById('barGrowth').style.width}); })()`,returnByValue:true});
+  console.log("EVOLUTION:", evo.result.value);
+  var se=await send("Page.captureScreenshot",{format:"png"}); fs.writeFileSync(path.join(__dirname,"evolution.png"),Buffer.from(se.data,"base64"));
   console.log("EXCEPTIONS:", errs.length?errs:"none");
   ws.close(); proc.kill();
 })();

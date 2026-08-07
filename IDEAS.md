@@ -101,8 +101,12 @@ sprite-composition — base + motif + palette — that everything else reuses).
 - 📱 Mobile pass: viewport meta added (was missing!), windows cap to screen height + scroll,
   taskbar/icons shrink under 560px; verified at 390×844 with no horizontal overflow.
 
+- 🐣 Sproutling evolution: growth stat (+3 per care act; +2/hr while all stats healthy) →
+  stages seedling → 🌸 bloomed (35: leaf-arms) → ✨ radiant (80: gold sparkles + glow).
+  4th bar in pet window; evolution toast; sprite recomposes everywhere. Fairy ring removed;
+  pixel-Sproutling favicon added.
+
 ## NEXT UP (not built)
-- 🐣 Sproutling growth/evolution stages (care streak → seedling → bloomed → radiant) — PICKED
 - 🎯 Gentle goals/milestones + keepsake journal — PICKED
 - Phase 2 ecosystem: 🐝 pollination → seeds, 📖 flower-dex + cross-breeding
 - Ground the Sproutling + planted flowers visually into the foreground garden bed
